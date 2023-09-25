@@ -1,5 +1,6 @@
 from fastapi import APIRouter, HTTPException, Header
-from app.models import EventCreate, Event
+from app.models import EventCreate, Event, RSVPData
+from datetime import datetime
 from firebase_admin import firestore
 from typing import List
 
@@ -13,13 +14,17 @@ router = APIRouter()
 def create_event(event: EventCreate, token: str = Header(None), email: str = Header(None)):
     if not token or not email:
         raise HTTPException(status_code=401, detail="Invalid token or email header")
+
+    # Convert date object to string
+    event_date_str = event.date.strftime("%Y-%m-%d")
+
     _, new_event = events_ref.add({
         "name": event.name,
-        "date": event.date,
+        "date": event_date_str,
         "location": event.location,
         "description": event.description,
         "user_email": email,  # associate the event with a user
-        "invitees": [],  # initialize invitees list
+        "invitees": event.invitees,  # initialize invitees list
         "rsvps": {}  # initialize rsvps dictionary
     })
     return Event(id=new_event.id, **event.dict())
@@ -30,7 +35,14 @@ def list_events(token: str = Header(None), email: str = Header(None)):
     if not token or not email:
         raise HTTPException(status_code=401, detail="Invalid token or email header")
     user_events = events_ref.where("user_email", "==", email).stream()
-    return [Event(id=doc.id, **doc.to_dict()) for doc in user_events]
+    event_list = []
+    for doc in user_events:
+        event_data = doc.to_dict()
+        # Convert the date string back to a date object
+        event_data["date"] = datetime.strptime(event_data["date"], "%Y-%m-%d").date()
+
+        event_list.append(Event(id=doc.id, **event_data))
+    return event_list
 
 
 @router.post("/events/{event_id}/invite/")
@@ -60,7 +72,8 @@ def invite_to_event(event_id: str, invitees: List[str], token: str = Header(None
 
 
 @router.post("/events/{event_id}/rsvp/")
-def rsvp_to_event(event_id: str, rsvp_status: str, token: str = Header(None), email: str = Header(None)):
+def rsvp_to_event(event_id: str, rsvp_data: RSVPData, token: str = Header(None), email: str = Header(None)):
+    rsvp_status = rsvp_data.rsvp_status
     if not token or not email:
         raise HTTPException(status_code=401, detail="Invalid token or email header")
 
@@ -70,8 +83,10 @@ def rsvp_to_event(event_id: str, rsvp_status: str, token: str = Header(None), em
     if not event.exists:
         raise HTTPException(status_code=404, detail="Event not found")
 
-    # Only invited users can RSVP
-    if email not in event.get("invitees"):
+    event_data = event.to_dict()
+
+    # Check if the user is the event creator or if they are in the invitees list
+    if email != event_data.get("user_email") and email not in event_data.get("invitees", []):
         raise HTTPException(status_code=403, detail="Not invited to this event")
 
     # Update the RSVP status

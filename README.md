@@ -25,7 +25,7 @@ Eventive is a web-based event planner application that allows users to create ev
    - Rename it to `firebase-credentials.json` and place it in the root directory.
 5. Run the FastAPI application:
     ```commandline
-    uvicorn main:app --reload
+    uvicorn app.main:app --reload
     ```
 
 ## LICENSE

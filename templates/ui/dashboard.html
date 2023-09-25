@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Eventive</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
+</head>
+
+<body>
+    <!-- Dashboard -->
+    <div class="container mt-5">
+        <h2>Welcome, [Username]!</h2>
+        <div>
+            <h3>Your Events</h3>
+            <!-- List of events will be dynamically populated here -->
+            <ul id="eventList"></ul>
+        </div>
+        <button onclick="showCreateEventModal()" class="btn btn-primary mt-3">Create New Event</button>
+    </div>
+
+    <!-- Create Event Modal -->
+    <div class="modal fade" id="createEventModal" tabindex="-1" aria-labelledby="createEventModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="createEventModalLabel">Create New Event</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="eventForm">
+                        <div class="mb-3">
+                            <label for="eventName" class="form-label">Event Name</label>
+                            <input type="text" class="form-control" id="eventName" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="eventDate" class="form-label">Event Date</label>
+                            <input type="date" class="form-control" id="eventDate" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="eventLocation" class="form-label">Event Location</label>
+                            <input type="text" class="form-control" id="eventLocation" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="eventDescription" class="form-label">Event Description</label>
+                            <textarea class="form-control" id="eventDescription" rows="3" required></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label for="eventInvitees" class="form-label">Invitees (comma separated emails)</label>
+                            <input type="text" class="form-control" id="eventInvitees">
+                        </div>
+                        <button type="submit" class="btn btn-primary">Create Event</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Event Details Modal -->
+    <div class="modal fade" id="eventDetailsModal" tabindex="-1" aria-labelledby="eventDetailsModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="eventDetailsModalLabel">Event Details</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <h4 id="eventDetailName"></h4>
+                    <p>Date: <span id="eventDetailDate"></span></p>
+                    <p>Location: <span id="eventDetailLocation"></span></p>
+                    <p>Description: <span id="eventDetailDescription"></span></p>
+                    <p>Invitees: <span id="eventDetailInvitees"></span></p>
+                    <h5>RSVP</h5>
+                    <div>
+                        <select id="rsvpStatus" class="form-select">
+                            <option value="attending">Attending</option>
+                            <option value="maybe">Maybe</option>
+                            <option value="not_attending">Not Attending</option>
+                        </select>
+                        <button onclick="submitRSVP()" class="btn btn-primary mt-2">Submit RSVP</button>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="text-center py-4">
+        <p>&copy; 2023 Eventive</p>
+    </footer>
+
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js"
+        integrity="sha384-I7E8VVD/ismYTF4hNIPjVp/Zjvgyol6VFvRkX/vR+Vc4jQkC+hVqc2pM8ODewa9r" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.min.js"
+        integrity="sha384-BBtl+eGJRgqQAUMxJ7pMwbEyER4l1g+O15P+16Ep7Q9Q+zqX6gSbd85u4mG4QzX+" crossorigin="anonymous"></script>
+    <script>
+        // Fetch user data from local storage
+        let userData = JSON.parse(localStorage.getItem('userData'));
+
+        $(document).ready(function() {
+            // Check if userData exists
+            if (userData) {
+                $("h2").text(`Welcome, ${userData.name}!`);
+            } else {
+                window.location.href = 'login.html';
+                return;
+            }
+
+            // Fetch user's events and display
+            $.ajax({
+                url: '/events',
+                type: 'GET',
+                headers: {
+                    "token": userData.token,
+                    "email": userData.email
+                },
+                success: function(events) {
+                    events.forEach(event => {
+                        $("#eventList").append(`<li><a href="#" onclick="showEventDetails('${encodeURIComponent(JSON.stringify(event))}')">${event.name} - ${event.date}</a></li>`);
+                    });
+                },
+                error: function(error) {
+                    console.log(error);
+                }
+            });
+        });
+
+        let currentEventId = null;
+        function showEventDetails(encodedEvent) {
+            let event = JSON.parse(decodeURIComponent(encodedEvent));
+            currentEventId = event.id;
+            $("#eventDetailName").text(event.name);
+            $("#eventDetailDate").text(event.date);
+            $("#eventDetailLocation").text(event.location);
+            $("#eventDetailDescription").text(event.description);
+            $("#eventDetailInvitees").text(event.invitees.join(', '));
+
+            // Check if rsvps property exists and if specific user's RSVP is present
+            let userRSVP;
+            if (event && 'rsvps' in event && event.rsvps[userData.email]) {
+                userRSVP = event.rsvps[userData.email];
+            }
+            $("#rsvpStatus").val(userRSVP || 'attending');
+            $("#eventDetailsModal").modal('show');
+        }
+
+        function submitRSVP() {
+            let rsvpStatus = $("#rsvpStatus").val();
+            if (!currentEventId) return;
+
+            let userData = JSON.parse(localStorage.getItem('userData'));
+
+            $.ajax({
+                url: `/events/${currentEventId}/rsvp/`,
+                type: 'POST',
+                data: JSON.stringify({ rsvp_status: rsvpStatus }),
+                contentType: "application/json",
+                headers: {
+                    "token": userData.token,
+                    "email": userData.email
+                },
+                success: function(response) {
+                    alert('RSVP submitted successfully!');
+                    $("#eventDetailsModal").modal('hide');
+                    location.reload();
+                },
+                error: function(error) {
+                    console.log(error);
+                    alert('Failed to submit the RSVP!');
+                }
+            });
+        }
+
+        function showCreateEventModal() {
+            $("#createEventModal").modal('show');
+        }
+
+        $(document).on('submit', '#eventForm', function(event) {
+            event.preventDefault();
+
+            let eventData = {
+                name: $("#eventName").val(),
+                date: $("#eventDate").val(),
+                location: $("#eventLocation").val(),
+                description: $("#eventDescription").val(),
+                invitees: $("#eventInvitees").val().split(',')
+            };
+
+            let userData = JSON.parse(localStorage.getItem('userData'));
+            console.log(eventData, 'event submit');
+            $.ajax({
+                url: '/events/',
+                type: 'POST',
+                data: JSON.stringify(eventData),
+                contentType: "application/json",
+                headers: {
+                    "token": userData.token,
+                    "email": userData.email
+                },
+                success: function(response) {
+                    alert('Event created successfully!');
+                    $("#createEventModal").modal('hide');
+                    location.reload();
+                },
+                error: function(error) {
+                    console.log(error);
+                    alert('Failed to create the event!');
+                }
+            });
+        });
+    </script>
+</body>
+
+</html>

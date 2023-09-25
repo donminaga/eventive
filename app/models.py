@@ -1,9 +1,10 @@
 from pydantic import BaseModel
-from datetime import datetime
 from typing import List, Dict
+from datetime import date
 
 
 class UserRegistration(BaseModel):
+    name: str
     email: str
     password: str
 
@@ -15,7 +16,7 @@ class UserLogin(BaseModel):
 
 class EventBase(BaseModel):
     name: str
-    date: datetime
+    date: date
     location: str
     description: str
     invitees: List[str] = []
@@ -31,3 +32,7 @@ class Event(EventBase):
 
     class Config:
         orm_mode = True
+
+
+class RSVPData(BaseModel):
+    rsvp_status: str
