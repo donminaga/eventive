@@ -128,6 +128,7 @@ venv/
 ENV/
 env.bak/
 venv.bak/
+eventive_env/
 
 # Spyder project settings
 .spyderproject
@@ -162,3 +163,11 @@ cython_debug/
 
 # Secret Files
 firebase-credentials.json
+
+# venv
+venv_env/
+
+# Elastic Beanstalk Files
+.elasticbeanstalk/*
+!.elasticbeanstalk/*.cfg.yml
+!.elasticbeanstalk/*.global.yml

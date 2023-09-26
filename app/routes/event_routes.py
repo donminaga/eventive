@@ -109,7 +109,7 @@ def rsvp_to_event(event_id: str, rsvp_data: RSVPData, token: str = Header(None),
         raise HTTPException(status_code=403, detail="Not invited to this event")
 
     # Update the RSVP status
-    event_ref.update({"rsvps": {email: rsvp_status}})
+    event_ref.update({f"rsvps.{email}": rsvp_status})
 
     return {"message": f"RSVP as {rsvp_status} received"}
 
