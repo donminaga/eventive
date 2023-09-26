@@ -13,22 +13,24 @@
 <body>
     <!-- Login Form -->
     <div class="container mt-5">
-        <h2>Login</h2>
-        <form id="loginForm">
-            <div class="mb-3">
-                <label for="email" class="form-label">Email address</label>
-                <input type="email" class="form-control" id="email" required>
-            </div>
-            <div class="mb-3">
-                <label for="password" class="form-label">Password</label>
-                <input type="password" class="form-control" id="password" required>
-            </div>
-            <button type="submit" class="btn btn-primary">Login</button>
-        </form>
+        <div class="w-50 mx-auto">
+            <h2>Login</h2>
+            <form id="loginForm">
+                <div class="mb-3">
+                    <label for="email" class="form-label">Email address</label>
+                    <input type="email" class="form-control" id="email" required>
+                </div>
+                <div class="mb-3">
+                    <label for="password" class="form-label">Password</label>
+                    <input type="password" class="form-control" id="password" required>
+                </div>
+                <button type="submit" class="btn btn-primary">Login</button>
+            </form>
+        </div>
     </div>
 
     <!-- Footer -->
-    <footer class="text-center py-4">
+    <footer class="text-center py-4 fixed-bottom">
         <p>&copy; 2023 Eventive</p>
     </footer>
 
@@ -51,7 +53,7 @@
             };
 
             $.ajax({
-                url: '/login',
+                url: 'api/login',
                 type: 'POST',
                 data: JSON.stringify(loginData),
                 contentType: "application/json",

@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import List, Dict
+from typing import List, Dict, Optional
 from datetime import date
 
 
@@ -21,6 +21,7 @@ class EventBase(BaseModel):
     description: str
     invitees: List[str] = []
     rsvps: Dict[str, str] = {}
+    user_email: Optional[str] = None
 
 
 class EventCreate(EventBase):

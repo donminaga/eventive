@@ -1,11 +1,17 @@
 from fastapi import APIRouter, HTTPException, Header
 
 from app.models import UserRegistration, UserLogin
-from firebase_admin import auth, firestore
+from firebase_admin import auth, firestore, credentials, initialize_app
+import os
 
-router = APIRouter()
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+FIREBASE_CREDENTIALS_PATH = os.path.join(BASE_DIR, '../firebase-credentials.json')
+cred = credentials.Certificate(FIREBASE_CREDENTIALS_PATH)
+
+initialize_app(cred)
 
 db = firestore.client()
+router = APIRouter()
 
 
 @router.post("/register")
@@ -17,6 +23,8 @@ def register(user: UserRegistration):
             password=user.password
         )
 
+        custom_token = auth.create_custom_token(user_record.uid)
+
         # Save user details in Firestore
         user_data = {
             "name": user.name,
@@ -24,7 +32,12 @@ def register(user: UserRegistration):
         }
         db.collection("users").document(user_record.uid).set(user_data)
 
-        return {"uid": user_record.uid, "email": user.email, "name": user.name}
+        return {
+            "uid": user_record.uid,
+            "email": user.email,
+            "name": user.name,
+            "token": custom_token
+        }
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
@@ -46,12 +59,3 @@ def login(user: UserLogin):
     except Exception as e:
         raise HTTPException(status_code=401, detail="Invalid credentials")
 
-
-@router.post("/login")
-def login(user: UserLogin):
-    try:
-        user_record = auth.get_user_by_email(user.email)
-        custom_token = auth.create_custom_token(user_record.uid)
-        return {"token": custom_token, "email": user.email}
-    except Exception as e:
-        raise HTTPException(status_code=401, detail="Invalid credentials")

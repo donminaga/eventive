@@ -17,6 +17,10 @@ Eventive is a web-based event planner application that allows users to create ev
     python -m venv venv 
     source venv/bin/activate
     ```
+   or, for windows
+   ```commandline
+   venv\Scripts\activate
+   ```
 3. Install the required dependencies
    ```commandline
    pip install -r requirements.txt
